@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html >
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Pesquisa de Projeto Integrador</title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript"> 
+      google.load('visualization', '1', {packages: ['table']});
+    </script>
+    <script type="text/javascript"> 
+    
+    var table;
+    var rawData;
+    var ssKey;
+   
+     google.script.run.withSuccessHandler(function(tableId){
+  ssKey=tableId;
+    drawDynamicSelect();
+  })
+  .getSpreadSheet();
+
+	
+
+
+
+	function drawDynamicSelect(){
+		var query = new google.visualization.Query(
+          'http://spreadsheets.google.com/tq?key=1B4LX_vC-MKKmCdTjkc-e8ptNNgyD-fT-TTnA80mzUvE');
+		   query.setQuery("SELECT A,D ");
+		   query.send(handleSelectResponse);
+
+	}
+	function handleSelectResponse(response) {
+		if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+
+      var data = response.getDataTable();
+      
+      var curso=document.myform.curso;
+	  for (i=0; i<7; i++){
+		var ansText = data.getValue(i, 1);
+		var valText = data.getValue(i, 1);
+		curso.options[curso.options.length]=new Option(ansText,valText);
+      }  
+      
+      var polo=document.myform.polo;
+	  for (i=0; i<data.getNumberOfRows(); i++){
+		var ansText = data.getValue(i, 0);
+		var valText = data.getValue(i, 0);
+		polo.options[polo.options.length]=new Option(ansText,valText);
+      }  
+
+	}
+
+function drawVisualization(ansSet) {  
+document.getElementById("project").innerHTML = "";
+
+ansSet = ansSet.toLowerCase();
+
+var titulo = document.myform.titulo;
+var descricao = document.myform.descricao;
+var assuntos = document.myform.assuntos;
+var autores = document.myform.autores;
+var curso = document.myform.curso;
+var polo = document.myform.polo;
+
+
+var ansSet_split = ansSet.split(" ");
+
+var titulo_str="";
+var descricao_str="";
+var assuntos_str="";
+var autores_str="";
+var curso_str=" J IS NOT NULL ";
+var polo_str=" K IS NOT NULL ";
+
+var query_string = "SELECT Q,C,J,K,H WHERE ";
+for(var i=0;i<ansSet_split.length;i++){
+
+if(titulo.checked){
+titulo_str = " lower(C) CONTAINS '"+ansSet_split[i]+"'  OR ";
+}
+if(descricao.checked){
+descricao_str = " lower(D) CONTAINS '"+ansSet_split[i]+"'  OR ";
+}
+if(assuntos.checked){
+assuntos_str = " lower(E) CONTAINS '"+ansSet_split[i]+"'  OR ";
+}
+if(autores.checked){
+autores_str = " lower(L) CONTAINS '"+ansSet_split[i]+"'  OR ";
+}
+if(curso.options[curso.selectedIndex].value!="TODOS OS CURSO"){
+curso_str=" J = '"+curso.options[curso.selectedIndex].value+"' ";
+}
+if(polo.options[polo.selectedIndex].value!="TODOS OS POLO"){
+polo_str=" K = '"+polo.options[polo.selectedIndex].value+"' ";
+}
+
+query_string += curso_str + "AND"+polo_str + " AND ("+titulo_str +descricao_str +assuntos_str +autores_str;
+}
+
+query_string = query_string.substring(0,query_string.length-5);
+if((titulo_str +descricao_str +assuntos_str +autores_str)!="")query_string+=" )";
+
+      var query = new google.visualization.Query('http://spreadsheets.google.com/tq?key='+ssKey);
+          
+    // alert(query_string);
+      query.setQuery(query_string);
+      
+      query.send(handleQueryResponse);
+    }
+    
+    function handleQueryResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+
+    
+      rawData = response.getDataTable();
+      
+      
+ table = new google.visualization.Table(document.getElementById('visualization'));
+  table.draw(rawData, {showRowNumber: true});
+  
+  google.visualization.events.addListener(table, 'select', myReadyHandler);
+  
+    }
+    
+    function myReadyHandler(){
+document.getElementById("project").innerHTML = "";
+var selection = table.getSelection();
+  for (var i = 0; i < selection.length; i++) {
+    var item = selection[i];
+    if (item.row != null) {
+      var str = rawData.getFormattedValue(item.row, 0);
+      drawProject(str);
+  }
+
+    }
+    }
+    
+    function drawProject(ansSet) {  
+      var query = new google.visualization.Query(
+          'http://spreadsheets.google.com/tq?key='+ssKey);
+      
+      query.setQuery("SELECT * WHERE Q ="+ansSet);
+      
+      query.send(handleProjectResponse);
+    }
+    
+    function handleProjectResponse(response) {
+      if (response.isError()) {
+        alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+        return;
+      }
+    
+
+    
+     var rawData = response.getDataTable();
+     
+     if(rawData.getValue(0,6)!=null) {    
+     var split = rawData.getValue(0,6).split(",");
+     var arquivos="";
+       for (var i = 0; i < split.length; i++) {
+     arquivos += '<a href="'+split[i]+'" target="_blank">'+split[i]+'</a> , ' ;       //ARQUIVOS
+     }    
+     }
+     var relat=rawData.getValue(0,5);
+     if(relat!=null)
+     relat = '<a href="'+rawData.getValue(0,5)+'" target="_blank">'+rawData.getValue(0,5)+'</a>'  //LINK DO RELATORIO
+     
+     var video=rawData.getValue(0,14);
+     if(video!=null)
+video = '<a href="'+rawData.getValue(0,14)+'" target="_blank">'+rawData.getValue(0,14)+'</a>'  //LINK DO VIDEO
+
+     var contatos='<a href="mailto:'+rawData.getValue(0,1)+'" target="_blank">'+rawData.getValue(0,1)+'</a>(cadastrador) , '  ;    
+     if(rawData.getValue(0,12)!=null){
+     var split = rawData.getValue(0,12).split(",");
+       for (var i = 0; i < split.length; i++) {
+     contatos += '<a href="mailto:'+split[i]+'" target="_blank">'+split[i]+'</a> , '  ;            //CONTATOS
+     }    
+     }
+
+     var data = new google.visualization.DataTable();
+     data.addColumn('string');
+     data.addColumn('string', 'PROJETO INTEGRADOR');
+     data.addRows([
+     [rawData.getColumnLabel(16),rawData.getValue(0,16)+""],   //ID
+     [rawData.getColumnLabel(2),rawData.getValue(0,2)],        //TITULO
+     [rawData.getColumnLabel(3),rawData.getValue(0,3)],        //DESCRICAO
+     [rawData.getColumnLabel(4),rawData.getValue(0,4)],        //ASSUNTOS RELACIONADOS
+     [rawData.getColumnLabel(5),relat],        //LINK DO RELATORIO
+     [rawData.getColumnLabel(14),video],      //LINK DO VIDEO
+     [rawData.getColumnLabel(6),arquivos],                     //ARQUIVOS     
+     [rawData.getColumnLabel(8),rawData.getValue(0,8)],        //OBSERVACOES
+     [rawData.getColumnLabel(7),rawData.getValue(0,7)],        //PERIODO
+     [rawData.getColumnLabel(9),rawData.getValue(0,9)],        //CURSO
+     [rawData.getColumnLabel(10),rawData.getValue(0,10)],      //POLO
+     [rawData.getColumnLabel(15),rawData.getValue(0,15)],      //GRUPO
+     [rawData.getColumnLabel(11),rawData.getValue(0,11)],      //AUTORES
+     [rawData.getColumnLabel(12),contatos],      //CONTATOS
+     ]);
+      
+      
+var table = new google.visualization.Table(document.getElementById('project'));
+  table.draw(data,{allowHtml:true});
+  
+  
+    }
+    
+    </script>
+    </head>
+    <body style="font-family: Arial;border: 0 none;" >
+    	<form action="" name="myform" onsubmit="return false">
+  <input type="text" name="valor" value="">
+  <input type="submit" value="Pesquisar" onclick="drawVisualization(valor.value)"><br/>
+  <p>Filtros</p>
+  <input type="checkbox" name="titulo" value="titulo" checked>Título
+  <input type="checkbox" name="descricao" value="descricao" checked>Descrição
+  <input type="checkbox" name="assuntos" value="assuntos" checked>Assuntos
+  <input type="checkbox" name="autores" value="autores" checked>Autores<br/>
+        <select name="curso">
+    	<option >TODOS OS CURSO</option>
+      </select>
+              <select name="polo">
+    	<option >TODOS OS POLO</option>
+      </select><br/><br/>
+    </form>
+<div id="visualization" ></div>
+<br/>
+<div id="project" ></div>
+<br/>
+</body>
+</html>
