@@ -77,8 +77,17 @@ var curso_str=" J IS NOT NULL ";
 var polo_str=" K IS NOT NULL ";
 
 var query_string = "SELECT Q,C,J,K,H WHERE ";
-for(var i=0;i<ansSet_split.length;i++){
 
+if(curso.options[curso.selectedIndex].value!="TODOS OS CURSOS"){
+curso_str=" J = '"+curso.options[curso.selectedIndex].value+"' ";
+}
+if(polo.options[polo.selectedIndex].value!="TODOS OS POLOS"){
+polo_str=" K = '"+polo.options[polo.selectedIndex].value+"' ";
+}
+
+query_string += curso_str + "AND"+polo_str + " AND (";
+
+for(var i=0;i<ansSet_split.length;i++){
 if(titulo.checked){
 titulo_str = " lower(C) CONTAINS '"+ansSet_split[i]+"'  OR ";
 }
@@ -91,14 +100,8 @@ assuntos_str = " lower(E) CONTAINS '"+ansSet_split[i]+"'  OR ";
 if(autores.checked){
 autores_str = " lower(L) CONTAINS '"+ansSet_split[i]+"'  OR ";
 }
-if(curso.options[curso.selectedIndex].value!="TODOS OS CURSO"){
-curso_str=" J = '"+curso.options[curso.selectedIndex].value+"' ";
-}
-if(polo.options[polo.selectedIndex].value!="TODOS OS POLO"){
-polo_str=" K = '"+polo.options[polo.selectedIndex].value+"' ";
-}
 
-query_string += curso_str + "AND"+polo_str + " AND ("+titulo_str +descricao_str +assuntos_str +autores_str;
+query_string += titulo_str +descricao_str +assuntos_str +autores_str;
 }
 
 query_string = query_string.substring(0,query_string.length-5);
@@ -106,7 +109,7 @@ if((titulo_str +descricao_str +assuntos_str +autores_str)!="")query_string+=" )"
 
       var query = new google.visualization.Query('http://spreadsheets.google.com/tq?key='+ssKey);
           
-    // alert(query_string);
+//     alert(query_string);
       query.setQuery(query_string);
       
       query.send(handleQueryResponse);
@@ -224,10 +227,10 @@ var table = new google.visualization.Table(document.getElementById('project'));
   <input type="checkbox" name="assuntos" value="assuntos" checked>Assuntos
   <input type="checkbox" name="autores" value="autores" checked>Autores<br/>
         <select name="curso">
-    	<option >TODOS OS CURSO</option>
+    	<option >TODOS OS CURSOS</option>
       </select>
               <select name="polo">
-    	<option >TODOS OS POLO</option>
+    	<option >TODOS OS POLOS</option>
       </select><br/><br/>
     </form>
 <div id="visualization" ></div>
